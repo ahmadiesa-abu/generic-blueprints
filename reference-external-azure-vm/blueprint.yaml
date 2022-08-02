@@ -1,0 +1,53 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint reference an external AWS EC2 given the instance_id then start it.
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.2.0/types.yaml
+  - plugin:cloudify-azure-plugin
+
+inputs:
+
+  vm_name:
+    type: string
+    required: true
+
+  resource_group_name:
+    type: string
+    required: true
+
+  location:
+    type: string
+    required: false
+
+dsl_definitions:
+
+  azure_client_config: &azure_client_config
+    subscription_id: { get_secret: azure_subscription_id }
+    tenant_id: { get_secret: azure_tenant_id }
+    client_id: { get_secret: azure_client_id }
+    client_secret: { get_secret: azure_client_secret }
+
+node_templates:
+
+  azure_vm:
+    type: cloudify.azure.nodes.compute.VirtualMachine
+    properties:
+      use_external_resource: true
+      name: { get_input: vm_name }
+      resource_group_name: { get_input: resource_group_name }
+      location: {get_input: location}
+      client_config: *azure_client_config
+      resource_config:
+        hardwareProfile: {}
+        storageProfile: {}
+        osProfile: {}
+      agent_config:
+        install_method: none
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure: {}
+        start: {}
+        stop: {}
+        delete: {}
