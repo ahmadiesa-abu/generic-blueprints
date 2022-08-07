@@ -1,0 +1,24 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.2.0/types.yaml
+
+labels:
+  csys-obj-type:
+    values:
+      - on-demand-resource
+
+  csys-obj-parent:
+    values:
+      - { get_input: parent_id }
+
+inputs:
+  parent_id:
+    type: string
+
+capabilities:
+  test_from_parent:
+    value: { get_environment_capability: test }
+
+  test:
+    value: test_from_child
