@@ -15,6 +15,9 @@ labels:
 inputs:
   parent_id:
     type: deployment_id
+    constraints:
+      - labels:
+          - csys-obj-type: environment
 
 capabilities:
   test_from_parent:
