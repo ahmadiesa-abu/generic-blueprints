@@ -1,0 +1,83 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: 'blueprints_test_terraform_local Description'
+
+imports:
+  - cloudify/types/types.yaml
+  - plugin:cloudify-terraform-plugin
+
+labels:
+  csys-obj-type:
+    values:
+      - environment
+
+  csys-obj-parent:
+    values:
+      - { get_input: parent_id }
+
+inputs:
+
+  parent_id:
+    type: deployment_id
+    constraints:
+      - labels:
+          - csys-obj-type: environment
+
+  project_key:
+    type: string
+    default: "CLOUD"
+
+  repository_name:
+    type: string
+    default: "nodejs-test"
+
+  language:
+    type: string
+    default: nodejs
+
+  repository_to_fork:
+    type: string
+    default: {concat: [{get_input: language},'-template']}
+
+
+node_templates:
+  terraform:
+    type: cloudify.nodes.terraform
+    properties:
+      resource_config:
+        installation_source: https://releases.hashicorp.com/terraform/0.14.11/terraform_0.14.11_linux_amd64.zip
+        plugins:
+          bitbucketserver: https://github.com/gavinbunney/terraform-provider-bitbucketserver/releases/download/v1.7.1/terraform-provider-bitbucketserver_1.7.1_linux_amd64.zip
+
+  bitbucket_repo:
+    type: cloudify.nodes.terraform.Module
+    properties:
+      resource_config:
+        source:
+          location: 'tf_module/bitbucket.zip'
+        source_path: 'bitbucket'
+        variables:
+          bitbucket_server: {get_secret: bitbucket_server}
+          bitbucket_username: {get_secret: bitbucket_username}
+          bitbucket_password: {get_secret: bitbucket_password}
+          bitbucket_project_key: {get_input: project_key}
+          bitbucket_repository: {get_input: repository_name}
+          is_public_repository: true
+          bitbucket_repository_to_fork: {get_input: repository_to_fork}
+    relationships:
+      - target: terraform
+        type: cloudify.terraform.relationships.run_on_host
+
+
+outputs:
+  repo_url:
+    description: Repo http url to clone from
+    value: {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
+
+  parent_id:
+    description: Parent Environment ID
+    value: {get_input: parent_id}
+
+  jenkins_url:
+    description: Jenkins Job Trigger URL
+    value: {concat: [{get_secret: jenkins_server}, '/job/push-application-container/buildWithParameters?image_name=',{get_input: repository_name}, '&bitbucket_url=', {get_attribute: [bitbucket_repo, outputs, repo_url, value]}]}
