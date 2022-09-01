@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{MICROSERVICE_NAME}}
+  labels:
+    app: {{MICROSERVICE_NAME}}
+    service: {{MICROSERVICE_NAME}}
+spec:
+  selector:
+    app: {{MICROSERVICE_NAME}}
+  ports:
+  - protocol: "TCP"
+    name: http
+    port: {{MICROSERVICE_PORT}}
+    targetPort: {{MICROSERVICE_PORT}}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{MICROSERVICE_NAME}}-v1
+  labels:
+    app: {{MICROSERVICE_NAME}}
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app: {{MICROSERVICE_NAME}}
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: {{MICROSERVICE_NAME}}
+        version: v1
+    spec:
+      containers:
+      - name: {{MICROSERVICE_NAME}}
+        image: {{MICROSERVICE_IMAGE}}
+        ports:
+        - containerPort: {{MICROSERVICE_PORT}}
+        securityContext:
+          runAsUser: 1000

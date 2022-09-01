@@ -9,7 +9,7 @@ imports:
 labels:
   csys-obj-type:
     values:
-      - environment
+      - service
 
   csys-obj-parent:
     values:

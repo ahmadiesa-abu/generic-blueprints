@@ -1,0 +1,112 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: 'blueprints_test_terraform_local Description'
+
+imports:
+  - cloudify/types/types.yaml
+  - plugin:cloudify-kubernetes-plugin
+
+labels:
+  csys-obj-type:
+    values:
+      - service
+
+  csys-obj-parent:
+    values:
+      - { get_input: parent_id }
+
+inputs:
+
+  parent_id:
+    type: deployment_id
+    constraints:
+      - labels:
+          - csys-obj-type: environment
+
+  microservice_namespace:
+    type: string
+    default: "ns1"
+
+  microservice_name:
+    type: string
+    default: "ms1"
+
+  microservice_image:
+    type: string
+    default: "ahmadiesa/testapp:latest"
+
+  microservice_port:
+    type: integer
+    default: 8000
+
+node_templates:
+
+  microservice_namespace:
+    type: cloudify.kubernetes.resources.Namespace
+    properties:
+      client_config:
+        configuration: &kubernetes_master_configuration
+          api_options:
+            host: { get_environment_capability: cluster_endpoint }
+            api_key: { get_environment_capability: cluster_token }
+            verify_ssl: false
+      use_external_resource: true
+      create_if_missing: true
+      definition:
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: { get_input: microservice_namespace }
+          labels:
+            istio-injection: enabled
+
+  microservice_service:
+    type: cloudify.kubernetes.resources.FileDefinedResource
+    properties:
+      client_config:
+        configuration: *kubernetes_master_configuration
+      options:
+        namespace: { get_input: microservice_namespace }
+      allow_node_redefinition: true
+      file:
+        resource_path: "manifests/microservice_template.yaml"
+        template_variables:
+          MICROSERVICE_NAME: { get_input: microservice_name}
+          MICROSERVICE_PORT: { get_input: microservice_port}
+          MICROSERVICE_IMAGE: { get_input: microservice_image}
+    relationships:
+      - target: microservice_namespace
+        type: cloudify.relationships.contained_in
+
+
+  microservice_gateway:
+    type: cloudify.nodes.Root
+    relationships:
+      - target: microservice_service
+        type: cloudify.relationships.depends_on
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/setup_kubectl.sh
+          executor: central_deployment_agent
+        configure:
+          implementation: scripts/kubectl_apply.sh
+          executor: central_deployment_agent
+          inputs: &kubectl_inputs
+            host: { get_environment_capability: cluster_endpoint }
+            token: { get_environment_capability: cluster_token }
+            gateway_resource_path: manifests/microservice_istio_template.yaml
+            istio_ingress_namespace: { get_input: microservice_namespace }
+            MICROSERVICE_NAME: { get_input: microservice_name}
+            MICROSERVICE_PORT: { get_input: microservice_port}
+        stop:
+          implementation: scripts/kubectl_delete.sh
+          executor: central_deployment_agent
+          inputs: *kubectl_inputs
+        delete:
+          implementation: scripts/remove_kubectl.sh
+          executor: central_deployment_agent
+
+capabilities:
+  microservice_url:
+    value: {concat:[{get_environment_capability: istio_ingress}, '/', {get_input: microservice_port}]}
