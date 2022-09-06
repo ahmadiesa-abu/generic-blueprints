@@ -81,6 +81,43 @@ locals {
       self        = true
     }
   }
+
+  mysql_database_rule = {
+      description      = "Egress RDS MySQL"
+      protocol         = "tcp"
+      from_port        = 3306
+      to_port          = 3306
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  postgres_database_rule = {
+      description      = "Egress RDS Postgres"
+      protocol         = "tcp"
+      from_port        = 5432
+      to_port          = 5432
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  oracle_database_rule = {
+      description      = "Egress RDS Oracle"
+      protocol         = "tcp"
+      from_port        = 1521
+      to_port          = 1521
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+  }
+
+  sqlserver_database_rule = {
+      description      = "Egress RDS SQLServer"
+      protocol         = "tcp"
+      from_port        = 1433
+      to_port          = 1433
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+  }
+
 }
 
 module "eks" {
@@ -126,7 +163,11 @@ module "eks" {
   # IMPORTANT
   node_security_group_additional_rules = merge(
     local.ingress_rules,
-    local.egress_rules
+    local.egress_rules,
+    local.mysql_database_rule,
+    local.postgres_database_rule,
+    local.oracle_database_rule,
+    local.sqlserver_database_rule
   )
 
 }
