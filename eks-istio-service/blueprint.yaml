@@ -42,13 +42,7 @@ inputs:
 
   aws_region:
     type: string
-    default: us-east-1
-    constraints:
-      - valid_values:
-        - us-east-1
-        - us-west-1
-        - ca-central-1
-        - eu-west-1
+    default: {get_environment_capability: aws_region}
 
 node_templates:
 

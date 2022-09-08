@@ -118,6 +118,10 @@ inputs:
     description: Database Engine
     display_label: Database Engine
     default: mysql
+    constraints:
+      - valid_values:
+        - mysql
+        - postgres
 
   database_engine_version:
     type: string
@@ -300,6 +304,9 @@ node_templates:
         type: cloudify.relationships.depends_on
 
 capabilities:
+
+  aws_region:
+    value: {get_input: region}
 
   cluster_endpoint:
     value: { get_attribute: [ eks_cluster, outputs, cluster_endpoint, value ] }

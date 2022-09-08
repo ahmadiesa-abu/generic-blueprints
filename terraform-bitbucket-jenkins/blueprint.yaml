@@ -27,17 +27,37 @@ inputs:
     type: string
     default: "CLOUD"
 
-  repository_name:
-    type: string
-    default: "nodejs-test"
-
   language:
     type: string
     default: nodejs
+    constraints:
+      - valid_values:
+        - nodejs
+        - python
+
+  repository_name:
+    type: string
+    default: {concat: [{get_input: language},'-test']}
 
   repository_to_fork:
     type: string
     default: {concat: [{get_input: language},'-template']}
+
+  microservice_namespace:
+    type: string
+    default: ns1
+
+  microservice_name:
+    type: string
+    default: ms1
+
+  microservice_port:
+    type: string
+    default: 8000
+    constraints:
+      - valid_values:
+        - 80
+        - 8000
 
 
 node_templates:
@@ -74,10 +94,20 @@ outputs:
     description: Repo http url to clone from
     value: {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
 
-  parent_id:
-    description: Parent Environment ID
-    value: {get_input: parent_id}
-
   jenkins_url:
     description: Jenkins Job Trigger URL
-    value: {concat: [{get_secret: jenkins_server}, '/job/push-application-container/buildWithParameters?image_name=',{get_input: repository_name}, '&bitbucket_url=', {get_attribute: [bitbucket_repo, outputs, repo_url, value]}]}
+    value:
+      concat:
+        - {get_secret: jenkins_server}
+        - '/job/push-application-container/buildWithParameters?image_name='
+        - {get_input: repository_name}
+        - '&bitbucket_url='
+        - {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
+        - '&namespace='
+        - {get_input: microservice_namespace}
+        - '&microservice_name='
+        - {get_input: microservice_name}
+        - '&parent_deployment_id='
+        - {get_input: parent_id}
+        - '&microservice_port='
+        - {get_input: microservice_port}

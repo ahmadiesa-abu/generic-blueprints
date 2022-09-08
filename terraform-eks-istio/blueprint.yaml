@@ -256,6 +256,9 @@ node_templates:
 
 capabilities:
 
+  aws_region:
+    value: { get_input: region }
+
   cluster_endpoint:
     value: { get_attribute: [ eks_cluster, outputs, cluster_endpoint, value ] }
 

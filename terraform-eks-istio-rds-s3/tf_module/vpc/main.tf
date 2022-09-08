@@ -17,7 +17,7 @@ module "vpc" {
   enable_dns_support   = true
 
   create_database_subnet_group = true
-  database_subnet_group_name = format("%s-%s",var.vpc_name,"-db-sgroup")
+  database_subnet_group_name = format("%s-%s",var.vpc_name,"db-sgroup")
   create_database_subnet_route_table = true
   create_database_internet_gateway_route = true
 
