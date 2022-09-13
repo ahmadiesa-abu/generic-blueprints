@@ -22,6 +22,7 @@ metadata:
   labels:
     app: {{MICROSERVICE_NAME}}
     version: v1
+    backstage.io/kubernetes-id: {{MICROSERVICE_NAME}}-v1
 spec:
   selector:
     matchLabels:
@@ -32,6 +33,7 @@ spec:
       labels:
         app: {{MICROSERVICE_NAME}}
         version: v1
+        backstage.io/kubernetes-id: {{MICROSERVICE_NAME}}-v1
     spec:
       containers:
       - name: {{MICROSERVICE_NAME}}
