@@ -1,0 +1,7 @@
+servicenow_endpoint: upload_blueprint
+servicenow_payload:
+  blueprint:
+    url: https://github.com/cloudify-community/blueprint-examples/releases/download/6.3.0-5/virtual-machine.zip
+    main_filename: aws.yaml
+    id: test-cfy-snow
+    config_name: default_tenant

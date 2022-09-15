@@ -1,0 +1,11 @@
+rest_calls:
+  - path: /api/x_clop2_cloudify/cloudify_actions/{{endpoint}}
+    method: POST
+    headers:
+      Content-type: application/json
+      Authorization: Basic {{ auth_token }}
+    payload: {{ payload }}
+    response_format: json
+    response_translation:
+      result:
+        summary: [message]

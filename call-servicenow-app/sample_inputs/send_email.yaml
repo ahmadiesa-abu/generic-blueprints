@@ -1,0 +1,6 @@
+servicenow_endpoint: send_email
+servicenow_payload:
+  email:
+    subject: Test Subject From Cloudify
+    body: Test Body From Cloudify 
+    recipient: ahmad@cloudify.co

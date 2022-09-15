@@ -1,0 +1,10 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: 'blueprints_test_terraform_local Description'
+
+imports:
+  - http://cloudify.co/spec/cloudify/6.3.0/types.yaml
+
+capabilities:
+  environment:
+    value: 'value1'

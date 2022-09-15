@@ -1,0 +1,11 @@
+servicenow_endpoint: create_environment
+servicenow_payload:
+  deployment:
+    blueprint_id: test-input-types
+    name: test-cfy-snow-rest
+    inputs:
+      - input_name: test_multiple_choice
+        input_type: string
+        input_value: Black
+    labels: []
+    config_name: default_tenant

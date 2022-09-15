@@ -1,0 +1,5 @@
+servicenow_endpoint: delete_environment
+servicenow_payload:
+  deployment:
+    id: d9fe787f47791510db0cb616536d4399
+    config_name: default_tenant

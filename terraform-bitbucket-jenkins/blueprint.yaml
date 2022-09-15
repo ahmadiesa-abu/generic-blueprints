@@ -13,11 +13,11 @@ labels:
 
   csys-obj-parent:
     values:
-      - { get_input: parent_id }
+      - { get_input: environment }
 
 inputs:
 
-  parent_id:
+  environment:
     type: deployment_id
     constraints:
       - labels:

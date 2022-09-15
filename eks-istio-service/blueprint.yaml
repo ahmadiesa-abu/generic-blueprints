@@ -91,32 +91,44 @@ node_templates:
 
 
   microservice_gateway:
-    type: cloudify.nodes.Root
+    # type: cloudify.nodes.Root
+    type: cloudify.nodes.kubernetes.resources.CustomResourceDefinition
+    properties:
+      client_config:
+        configuration: *kubernetes_master_configuration
+      options:
+        namespace: { get_input: microservice_namespace }
+      allow_node_redefinition: true
+      file:
+        resource_path: "manifests/microservice_istio_template.yaml"
+        template_variables:
+          MICROSERVICE_NAME: { get_input: microservice_name}
+          MICROSERVICE_PORT: { get_input: microservice_port}
     relationships:
       - target: microservice_service
         type: cloudify.relationships.depends_on
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        create:
-          implementation: scripts/setup_kubectl.sh
-          executor: central_deployment_agent
-        configure:
-          implementation: scripts/kubectl_apply.sh
-          executor: central_deployment_agent
-          inputs: &kubectl_inputs
-            host: { get_environment_capability: cluster_endpoint }
-            token: { get_environment_capability: cluster_token }
-            gateway_resource_path: manifests/microservice_istio_template.yaml
-            istio_ingress_namespace: { get_input: microservice_namespace }
-            MICROSERVICE_NAME: { get_input: microservice_name}
-            MICROSERVICE_PORT: { get_input: microservice_port}
-        stop:
-          implementation: scripts/kubectl_delete.sh
-          executor: central_deployment_agent
-          inputs: *kubectl_inputs
-        delete:
-          implementation: scripts/remove_kubectl.sh
-          executor: central_deployment_agent
+    # interfaces:
+    #   cloudify.interfaces.lifecycle:
+    #     create:
+    #       implementation: scripts/setup_kubectl.sh
+    #       executor: central_deployment_agent
+    #     configure:
+    #       implementation: scripts/kubectl_apply.sh
+    #       executor: central_deployment_agent
+    #       inputs: &kubectl_inputs
+    #         host: { get_environment_capability: cluster_endpoint }
+    #         token: { get_environment_capability: cluster_token }
+    #         gateway_resource_path: manifests/microservice_istio_template.yaml
+    #         istio_ingress_namespace: { get_input: microservice_namespace }
+    #         MICROSERVICE_NAME: { get_input: microservice_name}
+    #         MICROSERVICE_PORT: { get_input: microservice_port}
+    #     stop:
+    #       implementation: scripts/kubectl_delete.sh
+    #       executor: central_deployment_agent
+    #       inputs: *kubectl_inputs
+    #     delete:
+    #       implementation: scripts/remove_kubectl.sh
+    #       executor: central_deployment_agent
 
   api_gateway:
     type: cloudify.nodes.terraform.Module
