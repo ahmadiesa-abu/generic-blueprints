@@ -1,7 +1,9 @@
-tosca_definitions_version: cloudify_dsl_1_3
+tosca_definitions_version: cloudify_dsl_1_4
 
 description: >
-  This blueprint creates a VPC in AWS using Terraform
+  This blueprint creates an EKS Cluster, RDS, S3 and install Istio on EKS
+  using terraform as Environment that other deployment will leverage
+  the cluster and RDS connection details
 
 labels:
   csys-obj-type:
@@ -9,14 +11,14 @@ labels:
       - environment
 
 imports:
-  - http://cloudify.co/spec/cloudify/6.3.1/types.yaml
+  - cloudify/types/types.yaml
   - plugin:cloudify-terraform-plugin
 
 inputs:
 
   region:
     type: string
-    description: Name of the AWS region to deploy VPC into
+    description: Name of the AWS region to deploy Resources
     display_label: Region Name
     default: eu-west-1
     constraints:
@@ -127,7 +129,11 @@ inputs:
     type: string
     description: DataBase Engine Version
     display_label: DataBase Engine Version
-    default: 8.0.27
+    default: 8.0.28
+    constraints:
+      - valid_values:
+        - 8.0.28 # for mysql
+        - 13.7 # for postgres
 
   database_instance_type:
     type: string

@@ -1,7 +1,9 @@
-tosca_definitions_version: cloudify_dsl_1_3
+tosca_definitions_version: cloudify_dsl_1_4
 
 description: >
-  This blueprint creates a VPC in AWS using Terraform
+  This blueprint creates an EKS Cluster and install Istio on EKS
+  using terraform as Environment that other deployment will leverage
+  the cluster and Istio ingress
 
 labels:
   csys-obj-type:
@@ -9,14 +11,14 @@ labels:
       - environment
 
 imports:
-  - http://cloudify.co/spec/cloudify/6.3.1/types.yaml
+  - cloudify/types/types.yaml
   - plugin:cloudify-terraform-plugin
 
 inputs:
 
   region:
     type: string
-    description: Name of the AWS region to deploy VPC into
+    description: Name of the AWS region to deploy Resources
     display_label: Region Name
     default: eu-west-1
     constraints:
@@ -110,58 +112,6 @@ inputs:
     description: Desired number of nodes in the node group
     display_label: Desired nodes
     default: 1
-
-# RDS section
-
-  database_engine:
-    type: string
-    description: Database Engine
-    display_label: Database Engine
-    default: mysql
-
-  database_engine_version:
-    type: string
-    description: DataBase Engine Version
-    display_label: DataBase Engine Version
-    default: 8.0.27
-
-  database_instance_type:
-    type: string
-    description: Database Instance Type
-    display_label: Database Instance Type
-    default: db.t4g.large
-
-  database_name:
-    type: string
-    description: DataBase Name
-    display_label: DataBase Name
-    default: cfytestmysql
-
-  database_identifier:
-    type: string
-    description: DataBase Identifier
-    display_label: DataBase Identifier
-    default: cfymysql
-
-  database_username:
-    type: string
-    description: DataBase Username
-    display_label: DataBase Username
-    default: root
-
-  database_password:
-    type: string
-    description: Database Password
-    display_label: Database Password
-    default: cfy#1234
-
-# S3 Bucket
-
-  bucket_name:
-    type: string
-    description: Bucket Name
-    display_label: Bucket Name
-    default: cfytests3
 
 node_templates:
 
