@@ -1,6 +1,10 @@
 tosca_definitions_version: cloudify_dsl_1_4
 
-description: 'blueprints_test_terraform_local Description'
+description: >
+  This blueprint is used by developer where it will prepare an environment ready
+  for writing microservices based on pre-written templates , then it will provide
+  two jenkins pipeline trigger URLs to build a container and publish it to Kubernetes
+  Cluster
 
 imports:
   - cloudify/types/types.yaml
@@ -25,9 +29,10 @@ inputs:
 
   project_key:
     type: string
-    default: "CLOUD"
+    hidden: true
+    default: "CLOUD" # this value can be obtained from secret store
 
-  language:
+  microservicee_codebase:
     type: string
     default: nodejs
     constraints:
@@ -37,27 +42,31 @@ inputs:
 
   repository_name:
     type: string
-    default: {concat: [{get_input: language},'-test']}
+    default: {concat: [{get_input: microservicee_codebase},'-test']}
 
   repository_to_fork:
     type: string
-    default: {concat: [{get_input: language},'-template']}
+    hidden: true
+    default: {concat: [{get_input: microservicee_codebase},'-template']}
 
   microservice_namespace:
+    description: Namespace to publish the microservice into
     type: string
     default: ns1
 
   microservice_name:
+    description: Microservice name
     type: string
     default: ms1
 
   microservice_port:
     type: string
+    description: Microservice exposed port
     default: 8000
     constraints:
       - valid_values:
-        - 80
-        - 8000
+        - 80   # for python
+        - 8000 # for nodejs template
 
 
 node_templates:
@@ -89,13 +98,14 @@ node_templates:
         type: cloudify.terraform.relationships.run_on_host
 
 
-outputs:
+capabilities:
+
   repo_url:
     description: Repo http url to clone from
     value: {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
 
   jenkins_url:
-    description: Jenkins Job Trigger URL
+    description: Jenkins Job Trigger URL - push container to environemnt
     value:
       concat:
         - {get_secret: jenkins_server}
@@ -107,7 +117,24 @@ outputs:
         - {get_input: microservice_namespace}
         - '&microservice_name='
         - {get_input: microservice_name}
-        - '&parent_deployment_id='
-        - {get_input: parent_id}
+        - '&parent_environemnt='
+        - {get_input: environment}
+        - '&microservice_port='
+        - {get_input: microservice_port}
+
+  promote_url:
+    description: Jenkins Job Trigger URL - push container to production environemnt
+    value:
+      concat:
+        - {get_secret: jenkins_server}
+        - '/job/push-application-container/buildWithParameters?image_name='
+        - {get_input: repository_name}
+        - '&bitbucket_url='
+        - {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
+        - '&namespace='
+        - {get_input: microservice_namespace}
+        - '&microservice_name='
+        - {get_input: microservice_name}
+        - '&parent_environemnt=production-environment' # note it is a fixed id , can be configured from secrets as well
         - '&microservice_port='
         - {get_input: microservice_port}
