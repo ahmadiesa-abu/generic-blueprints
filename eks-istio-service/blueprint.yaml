@@ -92,7 +92,7 @@ node_templates:
 
   microservice_gateway:
     # type: cloudify.nodes.Root
-    type: cloudify.nodes.kubernetes.resources.CustomResourceDefinition
+    type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       client_config:
         configuration: *kubernetes_master_configuration
