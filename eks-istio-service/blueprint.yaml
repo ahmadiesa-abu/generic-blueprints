@@ -1,6 +1,8 @@
 tosca_definitions_version: cloudify_dsl_1_4
 
-description: 'blueprints_test_terraform_local Description'
+description: >
+  This blueprint is used to actually deploy the container into Kubernetes
+  cluster and publish it to istio_ingress and create API Gateway for it
 
 imports:
   - cloudify/types/types.yaml
@@ -14,11 +16,11 @@ labels:
 
   csys-obj-parent:
     values:
-      - { get_input: parent_id }
+      - { get_input: environment }
 
 inputs:
 
-  parent_id:
+  environment:
     type: deployment_id
     constraints:
       - labels:
@@ -42,6 +44,7 @@ inputs:
 
   aws_region:
     type: string
+    hidden: true
     default: {get_environment_capability: aws_region}
 
 node_templates:
@@ -91,44 +94,75 @@ node_templates:
 
 
   microservice_gateway:
-    # type: cloudify.nodes.Root
-    type: cloudify.kubernetes.resources.FileDefinedResource
-    properties:
-      client_config:
-        configuration: *kubernetes_master_configuration
-      options:
-        namespace: { get_input: microservice_namespace }
-      allow_node_redefinition: true
-      file:
-        resource_path: "manifests/microservice_istio_template.yaml"
-        template_variables:
-          MICROSERVICE_NAME: { get_input: microservice_name}
-          MICROSERVICE_PORT: { get_input: microservice_port}
+    type: cloudify.nodes.Root
     relationships:
       - target: microservice_service
         type: cloudify.relationships.depends_on
-    # interfaces:
-    #   cloudify.interfaces.lifecycle:
-    #     create:
-    #       implementation: scripts/setup_kubectl.sh
-    #       executor: central_deployment_agent
-    #     configure:
-    #       implementation: scripts/kubectl_apply.sh
-    #       executor: central_deployment_agent
-    #       inputs: &kubectl_inputs
-    #         host: { get_environment_capability: cluster_endpoint }
-    #         token: { get_environment_capability: cluster_token }
-    #         gateway_resource_path: manifests/microservice_istio_template.yaml
-    #         istio_ingress_namespace: { get_input: microservice_namespace }
-    #         MICROSERVICE_NAME: { get_input: microservice_name}
-    #         MICROSERVICE_PORT: { get_input: microservice_port}
-    #     stop:
-    #       implementation: scripts/kubectl_delete.sh
-    #       executor: central_deployment_agent
-    #       inputs: *kubectl_inputs
-    #     delete:
-    #       implementation: scripts/remove_kubectl.sh
-    #       executor: central_deployment_agent
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/setup_kubectl.sh
+          executor: central_deployment_agent
+        configure:
+          implementation: scripts/kubectl_apply.sh
+          executor: central_deployment_agent
+          inputs: &kubectl_inputs
+            host: { get_environment_capability: cluster_endpoint }
+            token: { get_environment_capability: cluster_token }
+            gateway_resource_path: manifests/microservice_istio_template.yaml
+            istio_ingress_namespace: { get_input: microservice_namespace }
+            MICROSERVICE_NAME: { get_input: microservice_name}
+            MICROSERVICE_PORT: { get_input: microservice_port}
+        stop:
+          implementation: scripts/kubectl_delete.sh
+          executor: central_deployment_agent
+          inputs: *kubectl_inputs
+        delete:
+          implementation: scripts/remove_kubectl.sh
+          executor: central_deployment_agent
+
+# revisit making using native kubernetes plugin types
+
+# type: cloudify.nodes.kubernetes.resources.CustomResourceDefinition
+# properties:
+#   client_config:
+#     configuration: *kubernetes_master_configuration
+#   options:
+#     namespace: { get_input: microservice_namespace }
+#   allow_node_redefinition: true
+#   definition:
+#     apiVersion: networking.istio.io/v1alpha3
+#     kind: Gateway
+#     metadata:
+#       name: {concat: [{ get_input: microservice_name}, '-gateway']}
+#     spec:
+#       selector:
+#         istio: ingressgateway # use istio default controller
+#       servers:
+#       - port:
+#           number: 80
+#           name: http
+#           protocol: HTTP
+#         hosts:
+#         - "*"
+#     apiVersion: networking.istio.io/v1alpha3
+#     kind: VirtualService
+#     metadata:
+#       name: { get_input: microservice_name}
+#     spec:
+#       hosts:
+#       - "*"
+#       gateways:
+#       - {concat: [{ get_input: microservice_name}, '-gateway']}
+#       http:
+#       - match:
+#         - uri:
+#             prefix: {concat: ['/',{ get_input: microservice_name}]}
+#         route:
+#         - destination:
+#             host: { get_input: microservice_name}
+#             port:
+#               number: { get_input: microservice_port}
 
   api_gateway:
     type: cloudify.nodes.terraform.Module

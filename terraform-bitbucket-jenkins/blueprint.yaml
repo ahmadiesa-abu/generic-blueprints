@@ -109,7 +109,7 @@ capabilities:
     value:
       concat:
         - {get_secret: jenkins_server}
-        - '/job/push-application-container/buildWithParameters?image_name='
+        - '/job/publish-development-microservice/buildWithParameters?image_name='
         - {get_input: repository_name}
         - '&bitbucket_url='
         - {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
@@ -127,7 +127,7 @@ capabilities:
     value:
       concat:
         - {get_secret: jenkins_server}
-        - '/job/push-application-container/buildWithParameters?image_name='
+        - '/job/publish-production-microservice/buildWithParameters?image_name='
         - {get_input: repository_name}
         - '&bitbucket_url='
         - {get_attribute: [bitbucket_repo, outputs, repo_url, value]}
@@ -135,6 +135,5 @@ capabilities:
         - {get_input: microservice_namespace}
         - '&microservice_name='
         - {get_input: microservice_name}
-        - '&parent_environemnt=production-environment' # note it is a fixed id , can be configured from secrets as well
         - '&microservice_port='
         - {get_input: microservice_port}
