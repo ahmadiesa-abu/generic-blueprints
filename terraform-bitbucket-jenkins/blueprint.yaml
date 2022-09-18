@@ -117,7 +117,7 @@ capabilities:
         - {get_input: microservice_namespace}
         - '&microservice_name='
         - {get_input: microservice_name}
-        - '&parent_environemnt='
+        - '&parent_environment='
         - {get_input: environment}
         - '&microservice_port='
         - {get_input: microservice_port}
