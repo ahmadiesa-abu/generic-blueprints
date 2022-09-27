@@ -1,0 +1,29 @@
+---
+- name: copy nginx site.conf
+  template:
+    src: roles/install/templates/site.conf.j2
+    dest: /etc/nginx/sites-available/app
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    port: "{{port}}"
+
+- name: enable app site
+  file:
+    src: /etc/nginx/sites-available/app
+    dest: /etc/nginx/sites-enabled/app
+    owner: root
+    group: root
+    mode: '0644'
+    state: link
+
+- name: enable nginx
+  service:
+    name: nginx
+    enabled: yes
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted

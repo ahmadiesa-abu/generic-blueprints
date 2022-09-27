@@ -1,0 +1,54 @@
+---
+
+- name: install EPEL repo
+  become: yes
+  yum: name=epel-release state=present
+
+- name: install nginx
+  package:
+    name: nginx
+    state: present
+
+- name: create www directory
+  file:
+    path: /var/www/app
+    recurse: yes
+    state: directory
+    mode: '0775'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: create index.html
+  template:
+    src: roles/install/templates/index.j2
+    dest: /var/www/app/index.html
+  vars:
+    message: "{{message}}"
+
+- name: Copy NGINX base config
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: copy nginx site.conf
+  template:
+    src: roles/install/templates/site.conf.j2
+    dest: /etc/nginx/conf.d/app.conf
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    port: "{{port}}"
+
+- name: Enable service nginx, and not touch the state
+  service:
+    name: nginx
+    enabled: yes
+
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
