@@ -1,0 +1,28 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  Check runtime behaviour.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+node_templates:
+
+  test_runtime:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/initialize_properties.py
+          executor: central_deployment_agent
+        configure:
+          implementation: scripts/update_properties.py
+          executor: central_deployment_agent
+
+capabilities:
+
+  a_list:
+    value: {get_attribute: [ test_runtime, a_list] }
+
+  a_dict:
+    value: {get_attribute: [ test_runtime, a_dict] }
