@@ -1,0 +1,31 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint check tmp file content to stop based on content.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  tmp_file_location:
+    type: string
+    default: /tmp/stop.txt
+
+
+node_templates:
+
+  some_file:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: scripts/stop_based_on_content.py
+          executor: central_deployment_agent
+          inputs:
+            tmp_file_location: { get_input: tmp_file_location }
+
+capabilities:
+
+  file_content:
+    value: {get_attribute: [ some_file, content] }
