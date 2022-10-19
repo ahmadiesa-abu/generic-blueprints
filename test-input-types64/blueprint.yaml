@@ -1,0 +1,111 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+imports:
+  - cloudify/types/types.yaml
+
+inputs:
+
+  blueprint_id_all:
+    type: list
+    item_type: blueprint_id
+  
+  blueprint_id_name_contains_blueprint_id_type:
+    type: list
+    item_type: blueprint_id
+    constraints:
+      - name_pattern:
+          contains: blueprint_id_type
+
+  blueprint_id_non_list_all:
+    type: blueprint_id
+
+  blueprint_id_non_list_name_contains_blueprint_id_type:
+    type: blueprint_id
+    constraints:
+      - name_pattern:
+          contains: blueprint_id_type
+
+  capability_value_all:
+    type: capability_value
+    constraints:
+      - deployment_id: deployment_inputs_test_capabilities_dep
+
+  capability_value_contains_y:
+    type: capability_value
+    constraints:
+      - deployment_id: deployment_inputs_test_capabilities_dep
+      - name_pattern:
+          contains: 'y'
+
+  deployment_id_all:
+    type: list
+    item_type: deployment_id
+
+  deployment_id_name_contains_deployment1234:
+    type: list
+    item_type: deployment_id
+    constraints:
+      - name_pattern:
+          contains: deployment1234
+
+  deployment_id_name_contains_not_existing:
+    type: list
+    item_type: deployment_id
+    constraints:
+      - name_pattern:
+          contains: deployment1234_not_existing
+
+  deployment_id_non_list_all:
+    type: deployment_id
+
+  deployment_id_non_list_name_contains_deployment1234:
+    type: deployment_id
+    constraints:
+      - name_pattern:
+          contains: deployment1234
+
+  deployment_id_non_list_name_contains_not_existing:
+    type: deployment_id
+    constraints:
+      - name_pattern:
+          contains: deployment1234_not_existing
+
+  secret_key_all:
+    type: secret_key
+
+  secret_key_contains_key:
+    type: secret_key
+    constraints:
+      - name_pattern:
+          contains: key
+
+  node_id_from_deployment:
+    type: node_id
+    constraints:
+      - deployment_id: deployment_inputs_test_contraint_test_dep
+
+  node_instance_from_deployment:
+    type: node_instance
+    constraints:
+      - deployment_id: deployment_inputs_test_contraint_test_dep
+
+  node_type_from_deployment:
+    type: node_type
+    constraints:
+      - deployment_id: deployment_inputs_test_contraint_test_dep
+
+  scaling_group_from_deployment:
+    type: scaling_group
+    constraints:
+      - deployment_id: deployment_inputs_test_contraint_test_dep
+
+
+node_templates:
+
+  dummy:
+    type: cloudify.nodes.Root
+
+
+capabilities:
+  some_capability:
+    value: what the hell?

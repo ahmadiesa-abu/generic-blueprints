@@ -1,0 +1,35 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+imports:
+  - cloudify/types/types.yaml
+
+node_types:
+
+  cloudify.nodes.Ahmad:
+    derived_from: cloudify.nodes.Root
+
+node_templates:
+
+  ahmad_test:
+    type: cloudify.nodes.Ahmad
+
+groups:
+
+  ahmad_test_grp:
+    members:
+      - ahmad_test
+
+
+policies:
+
+  scale_policy:
+    type: cloudify.policies.scaling
+    properties:
+      default_instances: 1
+      min_instances: 1
+      max_instances: 3
+    targets: [ahmad_test_grp]
+
+capabilities:
+  new_capability:
+    value: what the hell new?
