@@ -1,0 +1,65 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  variable_prop:
+    type: list
+    default:
+      - 20
+      - 60
+      - 10
+      - 30
+      - 80
+      - 50
+      - 10
+      - 30   
+      - 90  
+      - 120  
+  number_of_nodes:
+    type: integer
+    default: 3
+
+  max_number_of_nodes:
+    type: integer
+    default: 10
+
+node_types:
+
+  cloudify.nodes.CustomNode:
+    derived_from: cloudify.nodes.Root
+    properties:
+      some_number:
+        type: list
+    interfaces:
+      cloudify.interfaces.validation:
+        create:
+          implementation: scripts/set_index.py
+          executor: central_deployment_agent
+          inputs:
+            property_to_update: 
+              default: "some_number"
+            property_value_choice_input: 
+              default: "variable_prop"
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/print_value.py
+          executor: central_deployment_agent
+  
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.CustomNode
+    properties:
+      some_number: {get_input: variable_prop}
+    capabilities:
+      scalable:
+        properties:
+          default_instances: { get_input: number_of_nodes }
+          max_instances: { get_input: max_number_of_nodes}
