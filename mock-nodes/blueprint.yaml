@@ -1,0 +1,40 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  tmp_file_location:
+    type: string
+    default: resources/node_mock.json
+
+
+node_types:
+
+  cloudify.nodes.MockNode:
+    derived_from: cloudify.nodes.Root
+    properties:
+      node_runtime_json_file:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/mock_node.py
+          executor: central_deployment_agent
+  
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.MockNode
+    properties:
+      node_runtime_json_file: {get_input: tmp_file_location}
+
+capabilities:
+
+  runtime_properties:
+    value: { get_attribute: [ some_node, runtime_properties ] }
