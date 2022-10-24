@@ -16,20 +16,17 @@ node_templates:
       cloudify.interfaces.lifecycle:
         create:
           implementation: ansible.cloudify_ansible.tasks.run
-          inputs:
+          inputs: &ansible_inputs
             ansible_env_vars:
               ANSIBLE_FACT_PATH: /tmp/facts.d
             playbook_path: ansible/playbook.yaml
             sources: ansible/inventory.yaml
             ansible_become: true
+            extra_packages:
+              - selinux
         poststart:
           implementation: ansible.cloudify_ansible.tasks.store_facts
-          inputs:
-            ansible_env_vars:
-              ANSIBLE_FACT_PATH: /tmp/facts.d
-            playbook_path: ansible/playbook.yaml
-            sources: ansible/inventory.yaml
-            ansible_become: true
+          inputs: *ansible_inputs
 
 outputs:
   ansible_fact:
