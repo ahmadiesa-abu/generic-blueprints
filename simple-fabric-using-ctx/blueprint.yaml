@@ -1,0 +1,51 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint check tmp file content to stop based on content.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+  - plugin:cloudify-fabric-plugin
+
+inputs:
+
+  tmp_file_location:
+    type: string
+    default: /tmp/stop.txt
+
+node_types:
+  cloudify.nodes.simple_fabric:
+    derived_from: cloudify.nodes.Root
+    properties:
+      some_secret:
+        type: string
+        default: ''
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: fabric.fabric_plugin.tasks.run_script
+          inputs:
+            script_path: 
+              default: scripts/print_file.sh
+            fabric_env: &fabric_env
+              default:
+                host_string: {get_secret: host_ip}
+                user: {get_secret: host_user}
+                key: {get_secret: host_key}
+            process:
+              default:
+                args:
+                  - {get_input: tmp_file_location}
+
+node_templates:
+
+  some_file:
+    type: cloudify.nodes.simple_fabric
+    properties:
+      some_secret: {get_secret: host_ip}
+
+
+capabilities:
+
+  file_content:
+    value: {get_attribute: [ some_file, content] }
