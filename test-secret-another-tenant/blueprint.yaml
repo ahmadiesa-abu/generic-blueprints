@@ -1,0 +1,35 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint checks fabric ctx.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  secert_name:
+    type: string
+    default: nexus_files_url
+
+
+node_types:
+
+  cloudify.nodes.MockNode:
+    derived_from: cloudify.nodes.Root
+    properties:
+      secert_name:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/check_ctx_fabric.py
+          executor: central_deployment_agent
+  
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.MockNode
+    properties:
+      secert_name: {get_input: secert_name}
