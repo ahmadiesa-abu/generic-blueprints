@@ -1,0 +1,233 @@
+tosca_definitions_version: cloudify_dsl_1_3
+description: An example of deploying a Windows VM.
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.2.0/types.yaml
+  - plugin:cloudify-azure-plugin?version= >=3.7.3
+  - plugin:cloudify-utilities-plugin
+
+inputs:
+  resource_prefix:
+    type: string
+    display_label: Enter prefix to be applied to resource names
+    description: >
+      Resource names created in Azure by the blueprint can be
+      customized by supplying a prefix string (e.g. 'test_') 
+    default: cloudify
+  vm_size:
+    type: string
+    display_label: Enter location specific VM size
+    description: Location/region VM size name, e.g. 'Standard_M8ms'
+    default: Standard_D2as_v5
+  location:
+    type: string
+    display_label: Azure location
+    description: Select Azure location name
+    default: EastUS
+    constraints:
+      - valid_values:
+        - EastUS
+        - CentralUS
+        - WestUS
+        - WestEurope
+        - CanadaCentral
+  image_publisher:
+    type: string
+    display_label: Enter image publisher
+    description: Image publisher name, e.g. 'Canonical'
+    default: MicrosoftWindowsDesktop
+  image_offer:
+    type: string
+    display_label: Enter OS offer
+    description: Enter OS offer, e.g. 'UbuntuServer'
+    default: Windows-10
+  image_sku:
+    type: string
+    display_label: Enter image SKU
+    description: Enter image SKU, e.g. '18.04-LTS'
+    default: win10-21h2-pro
+  image_version:
+    type: string
+    display_label: Enter image version
+    description: Enter image version, e.g. 'latest'
+    default: latest
+  admin_username:
+    type: string
+    display_label: Enter desired admin username
+    description: Enter desired admin username
+    default: cloudify
+  admin_password: 
+    type: string
+    display_label: Enter admin password
+    description: Enter the desired admin password
+    default: "CloudifyAzure123!"
+  additional_username:
+    type: string
+    display_label: Additional user
+    description: Additional user to create via Powershell script
+    default: jdoe
+  additional_user_password:
+    type: string
+    display_label: Password for the additional user
+    description: Password for the user created via Powershell script
+    default: password123
+
+dsl_definitions:
+  azure_credentials: &azure_credentials
+    subscription_id: { get_secret: azure_subscription_id }
+    tenant_id: { get_secret: azure_tenant_id }
+    client_id: { get_secret: azure_client_id }
+    client_secret: { get_secret: azure_client_secret }
+
+node_templates:
+
+  resource_group:
+    type: cloudify.nodes.azure.ResourceGroup
+    properties:
+      client_config: *azure_credentials
+      name: {concat: [ {get_input: resource_prefix}, group ]}
+      location: {get_input: location}
+
+  public_ip:
+    type: cloudify.azure.nodes.network.PublicIPAddress
+    properties:
+      client_config: *azure_credentials
+      location: {get_input: location}
+      resource_config:
+        publicIPAllocationMethod:
+          dynamic
+    relationships:
+      - type: cloudify.azure.relationships.contained_in_resource_group
+        target: resource_group
+ 
+  network:
+    type: cloudify.azure.nodes.network.VirtualNetwork
+    properties:
+      client_config: *azure_credentials
+      name: {concat: [{get_input: resource_prefix}, network]}
+      location: {get_input: location}
+    relationships:
+      - type: cloudify.azure.relationships.contained_in_resource_group
+        target: resource_group
+
+  subnet:
+    type: cloudify.azure.nodes.network.Subnet
+    properties:
+      client_config: *azure_credentials
+      name: {concat: [{get_input: resource_prefix}, subnet]}
+      location: {get_input: location}
+      resource_config:
+        addressPrefix: '10.10.10.0/24'
+    relationships:
+      - type: cloudify.azure.relationships.contained_in_virtual_network
+        target: network
+
+  ip_config:
+    type: cloudify.azure.nodes.network.IPConfiguration
+    properties:
+      client_config: *azure_credentials
+      location: { get_input: location }
+      resource_config:
+        privateIPAllocationMethod: Dynamic
+    relationships:
+    - type: cloudify.azure.relationships.ip_configuration_connected_to_subnet
+      target: subnet
+    - type: cloudify.azure.relationships.ip_configuration_connected_to_public_ip
+      target: public_ip
+
+  security_group:
+    type: cloudify.azure.nodes.network.NetworkSecurityGroup
+    properties:
+      client_config: *azure_credentials
+      name: {concat: [{get_input: resource_prefix}, sg]}
+      location: { get_input: location }
+      resource_config:
+        securityRules:
+        - name: rdp
+          properties:
+            description: RDP access
+            protocol: Tcp
+            sourcePortRange: '*'
+            destinationPortRange: 3389
+            sourceAddressPrefix: '*'
+            destinationAddressPrefix: '*'
+            priority: 100
+            access: Allow
+            direction: Inbound
+        - name: winrm
+          properties:
+            description: Winrm access
+            protocol: Tcp
+            sourcePortRange: '*'
+            destinationPortRange: 5985
+            sourceAddressPrefix: '*'
+            destinationAddressPrefix: '*'
+            priority: 110
+            access: Allow
+            direction: Inbound
+    relationships:
+    - type: cloudify.azure.relationships.contained_in_resource_group
+      target: resource_group
+
+  nic:
+    type: cloudify.azure.nodes.network.NetworkInterfaceCard
+    properties:
+      client_config: *azure_credentials
+      location: { get_input: location }
+    relationships:
+    - type: cloudify.azure.relationships.contained_in_resource_group
+      target: resource_group
+    - type: cloudify.azure.relationships.nic_connected_to_network_security_group
+      target: security_group
+    - type: cloudify.azure.relationships.nic_connected_to_ip_configuration
+      target: ip_config
+
+  storage_account:
+    type: cloudify.azure.nodes.storage.StorageAccount
+    properties:
+      client_config: *azure_credentials
+      location: { get_input: location }
+      resource_config:
+        accountType: Standard_LRS
+    relationships:
+    - type: cloudify.azure.relationships.contained_in_resource_group
+      target: resource_group
+
+  vm:
+    type: cloudify.azure.nodes.compute.WindowsVirtualMachine
+    properties:
+      client_config: *azure_credentials
+      agent_config:
+        install_method: none
+        user: { get_input: admin_username }
+        password: { get_input: admin_password }
+      name: {concat: [{get_input: resource_prefix}, host]}
+      location: { get_input: location }
+      os_family: windows
+      use_public_ip: true
+      resource_config:
+        hardwareProfile:
+          vmSize: { get_input: vm_size }
+        storageProfile:
+          imageReference:
+            publisher: { get_input: image_publisher }
+            offer: { get_input: image_offer }
+            sku: { get_input: image_sku }
+            version: { get_input: image_version }
+        osProfile:
+          computerName: { get_property: [SELF, name] }
+          adminUsername: { get_input: admin_username }
+          adminPassword: { get_input: admin_password }
+    relationships:
+      - type: cloudify.azure.relationships.contained_in_resource_group
+        target: resource_group
+      - type: cloudify.azure.relationships.connected_to_nic
+        target: nic
+      - type: cloudify.azure.relationships.connected_to_storage_account
+        target: storage_account
+
+capabilities:
+
+  public_ip:
+    description: The public ip of the instance
+    value: { get_attribute: [ vm, public_ip ] }
