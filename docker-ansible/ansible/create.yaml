@@ -6,4 +6,8 @@
       copy:
         dest: "/tmp/ansible_test.txt"
         content: |
-          {{message}}
+           "Hello, World!"
+    - name: read all text files in /tmp/ansible_test.txt
+      shell: cat < /tmp/ansible_test.txt
+      args:
+        executable: /bin/bash
