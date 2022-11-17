@@ -38,15 +38,20 @@ inputs:
     type: string
     default: "ansible:"
 
-  container_volume:
+  install_container_volume:
     description: volume that will be mapped to container
     type: string
-    default: "/ansible-playbooks"
+    default: "/install-ansible-playbooks"
+
+  uninstall_container_volume:
+    description: volume that will be mapped to container
+    type: string
+    default: "/uninstall-ansible-playbooks"
 
 dsl_definitions:
 
   docker_config: &docker_config
-    docker_sock_file: /private/var/run/docker.sock
+    docker_sock_file: /Users/mac/.docker/run/docker.sock
 
 node_templates:
 
@@ -76,17 +81,13 @@ node_templates:
     type: cloudify.nodes.docker.container_files
     properties:
       resource_config:
-        docker_machine:
-          docker_ip: { get_input: docker_host }
-          docker_user: { get_input: docker_user }
-          docker_key: { get_secret: agent_key_private }
         source: {get_input: install_playbook}
         destination: ""
         ansible_sources:
-          container_volume: { get_input: container_volume }
+          container_volume: { get_input: install_container_volume }
           playbook_path:
             concat:
-              - {get_input: container_volume }
+              - {get_input: install_container_volume }
               - /
               - {get_input: install_playbook_name}
           ansible_host: 127.0.0.1
@@ -96,17 +97,13 @@ node_templates:
     type: cloudify.nodes.docker.container_files
     properties:
       resource_config:
-        docker_machine:
-          docker_ip: { get_input: docker_host }
-          docker_user: { get_input: docker_user }
-          docker_key: { get_secret: agent_key_private }
         source: {get_input: uninstall_playbook}
         destination: ""
         ansible_sources:
-          container_volume: { get_input: container_volume }
+          container_volume: { get_input: uninstall_container_volume }
           playbook_path:
             concat:
-              - {get_input: container_volume }
+              - {get_input: uninstall_container_volume }
               - /
               - {get_input: uninstall_playbook_name}
           ansible_host: 127.0.0.1
@@ -123,14 +120,16 @@ node_templates:
             - { get_input: ansible_version }
         container_args:
           command: { get_attribute: [install_ansible_container_files, ansible_container_command_arg] }
-          working_dir: { get_input: container_volume }
+          working_dir: { get_input: install_container_volume }
           environment:
             ANSIBLE_HOST_KEY_CHECKING: False
             ANSIBLE_INVALID_TASK_ATTRIBUTE_FAILED: False
           volumes:
-            - { get_input: container_volume }
+            - { get_input: install_container_volume }
+            - { get_input: uninstall_container_volume }
           volumes_mapping:
             - { get_attribute: [install_ansible_container_files, destination] }
+            - { get_attribute: [uninstall_ansible_container_files, destination] }
     relationships:
       - type: cloudify.relationships.depends_on
         target: docker_ansible_image
