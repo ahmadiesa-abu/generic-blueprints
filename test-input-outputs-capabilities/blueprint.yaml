@@ -1,0 +1,62 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.3.0/types.yaml
+
+inputs:
+  test_boolean:
+    type: boolean
+    default: true
+  test_string:
+    type: string
+    default: random
+  test_multiple_choice:
+    type: string
+    constraints:
+      - valid_values:
+          - White
+          - Black
+          - Yellow
+          - Green
+          - Blue
+          - Red
+          - Gray
+  test_dict:
+    type: dict
+    default:
+      a: 'ssss'
+      b: 20
+      c: true
+  test_float:
+    type: float
+    default: 0.5
+  test_integer:
+    type: integer
+    default: 1
+  test_list:
+    type: list
+    default: ['one', 'two', 'three']
+  test_concat:
+    type: string
+    default: { concat: ['hello',{get_input: test_multiple_choice}] }
+
+node_templates:
+
+  dummy:
+    type: cloudify.nodes.Root
+
+outputs:
+  first_output:
+    description: first output to have fun with
+    value: {get_input: test_string}
+  second_output:
+    description: second output to have fun with
+    value: {get_input: test_concat}
+
+capabilities:
+  first_capability:
+    description: first capability to have fun with
+    value: some_value
+  second_capability:
+    description: second capaiblity to have fun with
+    value: {concat: [ 'you chose', {get_input: test_multiple_choice}]}

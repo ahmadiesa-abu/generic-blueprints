@@ -1,0 +1,41 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint creates infrastructure using Terraform.
+
+imports:
+  - http://cloudify.co/spec/cloudify/6.3.1/types.yaml
+  - plugin:cloudify-terraform-plugin
+
+node_templates:
+
+  terraform:
+    type: cloudify.nodes.terraform
+
+  terraform_module:
+    type: cloudify.nodes.terraform.Module
+    properties:
+      resource_config:
+        # environment_variables:
+        #   ARM_SUBSCRIPTION_ID: {get_secret: azure_subscription_id}
+        #   ARM_TENANT_ID: {get_secret: azure_tenant_id}
+        #   ARM_CLIENT_ID: {get_secret: azure_client_id}
+        #   ARM_CLIENT_SECRET: {get_secret: azure_client_secret}
+        provider:
+          providers:
+            - name: azurerm
+              options:
+                features: { }
+                use_msi: "true"
+                subscription_id: { concat: [ '"', { get_secret: ARM_SUBSCRIPTION_ID }, '"' ] }
+                tenant_id: { concat: [ '"', { get_secret: ARM_TENANT_ID }, '"' ] }
+        source:
+          location: terraform.zip
+        source_path: terraform
+    relationships:
+      - target: terraform
+        type: cloudify.terraform.relationships.run_on_host
+
+capabilities:
+  outputs:
+    value: { get_attribute: [ terraform_module, outputs] }
