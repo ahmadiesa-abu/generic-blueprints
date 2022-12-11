@@ -1,0 +1,73 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  azure_subscription_id:
+    type: string
+    required: false
+    default: { get_secret: azure_subscription_id }
+
+  azure_tenant_id:
+    type: string
+    required: false
+    default: { get_secret: azure_tenant_id }
+
+  azure_client_id:
+    type: string
+    required: false
+    default: { get_secret: azure_client_id }
+
+  azure_client_secret:
+    type: string
+    required: false
+    default: { get_secret: azure_client_secret }
+
+  location:
+    type: string
+    required: true
+    default: eastus2
+
+
+node_types:
+
+  cloudify.nodes.ValiateCredentials:
+    derived_from: cloudify.nodes.Root
+    properties:
+      azure_subscription_id:
+        type: string
+      azure_tenant_id:
+        type: string
+      azure_client_id:
+        type: string
+      azure_client_secret:
+        type: string
+      location:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/check_connection.py
+          executor: central_deployment_agent
+  
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.ValiateCredentials
+    properties:
+      azure_subscription_id: {get_input: azure_subscription_id}
+      azure_tenant_id: {get_input: azure_tenant_id}
+      azure_client_id: {get_input: azure_client_id}
+      azure_client_secret: {get_input: azure_client_secret}
+      location: {get_input: location}
+
+capabilities:
+
+  connection_status:
+    value: { get_attribute: [ some_node, connection_status ] }
