@@ -54,14 +54,15 @@ if azure_tenant is None or azure_client_id is None or azure_secret is None or az
     ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
     ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
 
-
-status_code, response_content = list_resource_groups(azure_tenant, azure_client_id, azure_secret, azure_subscription_id)
-
-if status_code != 200:
-    ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
-    ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
-    ctx.instance.runtime_properties['http_response'] = response_content
 else:
-    ctx.instance.runtime_properties['connection_status'] = 'Valid Credentials'
-    ctx.instance.runtime_properties['http_response'] = response_content
+
+    status_code, response_content = list_resource_groups(azure_tenant, azure_client_id, azure_secret, azure_subscription_id)
+
+    if status_code != 200:
+        ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
+        ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
+        ctx.instance.runtime_properties['http_response'] = response_content
+    else:
+        ctx.instance.runtime_properties['connection_status'] = 'Valid Credentials'
+        ctx.instance.runtime_properties['http_response'] = response_content
 

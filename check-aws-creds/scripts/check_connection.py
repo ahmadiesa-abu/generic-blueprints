@@ -141,16 +141,17 @@ if access_key is None or secret_key is None:
     ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
     ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
 
-aws_auth = AWSRequestsAuth(access_key, secret_key, host, region, service)
-
-response = requests.get('http://ec2.amazonaws.com/?Action=DescribeInstances',
-                        auth=aws_auth)
-
-if response.status_code != 200:
-    ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
-    ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
-    ctx.instance.runtime_properties['http_response'] = '{0}'.format(response.content.decode('utf-8'))
 else:
-    ctx.instance.runtime_properties['connection_status'] = 'Valid Credentials'
-    ctx.instance.runtime_properties['http_response'] = '{0}'.format(response.content.decode('utf-8'))
+    aws_auth = AWSRequestsAuth(access_key, secret_key, host, region, service)
+
+    response = requests.get('http://ec2.amazonaws.com/?Action=DescribeInstances',
+                            auth=aws_auth)
+
+    if response.status_code != 200:
+        ctx.instance.runtime_properties['connection_status'] = 'Invalid Credentials'
+        ctx.instance.runtime_properties['debug_action'] = 'Check your input values'
+        ctx.instance.runtime_properties['http_response'] = '{0}'.format(response.content.decode('utf-8'))
+    else:
+        ctx.instance.runtime_properties['connection_status'] = 'Valid Credentials'
+        ctx.instance.runtime_properties['http_response'] = '{0}'.format(response.content.decode('utf-8'))
 

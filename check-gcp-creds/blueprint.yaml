@@ -1,0 +1,54 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+inputs:
+
+  gcp_credentials:
+    type: string
+    default: { get_secret: gcp_credentials }
+
+  region:
+    type: string
+    default: 'europe-west1'
+
+  zone:
+    type: string
+    default: 'europe-west1-b'
+
+
+node_types:
+
+  cloudify.nodes.ValiateCredentials:
+    derived_from: cloudify.nodes.Root
+    properties:
+      gcp_credentials:
+        type: string
+      region:
+        type: string
+      zone:
+        type: string
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create: 
+          implementation: scripts/check_connection.py
+          executor: central_deployment_agent
+  
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.ValiateCredentials
+    properties:
+      gcp_credentials: {get_input: gcp_credentials}
+      region: {get_input: region}
+      zone: {get_input: zone}
+
+capabilities:
+
+  connection_status:
+    value: { get_attribute: [ some_node, connection_status ] }
