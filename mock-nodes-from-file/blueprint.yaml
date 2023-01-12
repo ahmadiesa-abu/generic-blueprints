@@ -1,0 +1,66 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+  - plugin:cloudify-starlingx-plugin
+
+blueprint_labels:
+
+  csys-obj-type:
+    values:
+    - environment
+
+  csys-env-type:
+    values:
+    - wrcp
+
+labels:
+
+  # These values are used to identify sites and parent deployments.
+  # They will be filled automatically during installation of the blueprint.
+  # For manual subcloud enrollment, the values need to be filled manually
+  # in the UI.
+
+  csys-obj-type:
+    values:
+     - environment
+
+  csys-env-type:
+    values: []
+
+  csys-obj-parent:
+    values: []
+
+  csys-location-name:
+    values: []
+
+  csys-location-lat:
+    values: []
+
+  csys-location-long:
+    values: []
+
+  csys-wrcp-services:
+    values: []
+
+inputs:
+
+  file_location:
+    type: string
+    default: resources/wrcp_data.json
+
+
+node_templates:
+
+  wrcp:
+    type: cloudify.nodes.starlingx.WRCP
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        poststart:
+          implementation: scripts/mock_wrcp.py
+          executor: central_deployment_agent
+          inputs:
+            file_location: { get_input: file_location }
