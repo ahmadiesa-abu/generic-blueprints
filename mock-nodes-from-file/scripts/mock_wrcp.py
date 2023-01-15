@@ -1,6 +1,6 @@
 import json
 
-from time import sleep
+from time import sleep, time
 from copy import deepcopy
 
 from cloudify import ctx
@@ -39,14 +39,13 @@ runtime_properties = download_json_content.get('runtime_properties', {})
 ctx.instance.runtime_properties = runtime_properties
 ctx.instance.update()
 rest_client = get_rest_client()
-dep_labels = rest_client.deployments.get(ctx.deployment.id).get('labels', [])
-ctx.logger.info('labels {0}'.format(dep_labels))
-dep_labels = convert_list_to_dict(dep_labels)
-is_subcloud = dep_labels.get('is_subcloud', '')
+parent_dep_labels = rest_client.deployments.get(ctx.deployment.id).get('labels', [])
+parent_dep_labels = convert_list_to_dict(parent_dep_labels)
+env_type = parent_dep_labels.get('csys-env-type', '')
 
-if is_subcloud != 'True':
+if env_type != 'Wind-River-Cloud-Platform-Subcloud':
     # get number of subclouds to create
-    group_id = 'mock-subcloud'
+    group_id = 'mock-subcloud{0}'.format(round(time()*1000))
     blueprint_id = ctx.blueprint.id
     number_of_subclouds = len(runtime_properties.get('subcloud_names', []))
 
@@ -58,8 +57,14 @@ if is_subcloud != 'True':
     dep_inputs = []
     for _ in range(number_of_subclouds):
         dep_inner_label = {
-            'is_subcloud': 'True',
-            'csys-obj-parent': ctx.deployment.id
+            'csys-obj-parent': ctx.deployment.id,
+            'csys-wrcp-services': 'kubernetes',
+            'wrcp-group-name': 'Default',
+            'csys-location-lat': '33.5722',
+            'csys-location-long': '-112.891',
+            'csys-env-type': 'Wind-River-Cloud-Platform-Subcloud',
+            'csys-obj-type': 'environment',
+            'wrcp-group-id': '1'
         }
         dep_labels.append(convert_dict_to_list(dep_inner_label))
         dep_inputs.append({'file_location': 'resources/subcloud_data.json'})
@@ -92,3 +97,13 @@ if is_subcloud != 'True':
                         group=group_id, e=e))
             sleep(5)
             continue
+    # subcloud , let's add some more labels
+    parent_dep_labels['csys-location-long'] = '-118.4068'
+    parent_dep_labels['csys-location-lat'] = '34.1139'
+    parent_dep_labels['csys-wrcp-services'] = 'kubernetes'
+    parent_dep_labels['csys-location-name'] = 'los angeles ca'
+    parent_dep_labels['csys-env-type'] = 'Wind-River-Cloud-Platform-System-Controller'
+    labels = convert_dict_to_list(parent_dep_labels)
+    rest_client.deployments.update_labels(
+        ctx.deployment.id,
+        labels=labels)
