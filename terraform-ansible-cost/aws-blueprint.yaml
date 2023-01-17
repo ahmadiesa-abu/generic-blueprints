@@ -89,6 +89,7 @@ node_templates:
           implementation: files/check_for_approval.py
           executor: central_deployment_agent
           inputs:
+            servicenow_host: {get_secret: servicenow_host }
             requested_item_number: {get_label: sn_ref_number}
             username: {get_secret: servicenow_user}
             password: {get_secret: servicenow_password}

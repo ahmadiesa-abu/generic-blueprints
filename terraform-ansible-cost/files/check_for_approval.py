@@ -5,19 +5,21 @@ from cloudify import ctx
 from cloudify.exceptions import (NonRecoverableError, OperationRetry)
 from cloudify.state import ctx_parameters as inputs
 
+servicenow_host = inputs['servicenow_host']
 requested_item_number = inputs['requested_item_number']
 username = inputs['username']
 password = inputs['password']
 
 if requested_item_number:
 
-    URL = "https://dev95631.service-now.com/api/now/table/{tableName}"
+    URL = "https://{servicenow_host}/api/now/table/{table_name}"
     PARAMS = {
         "number": requested_item_number
     }
     AUTH = HTTPBasicAuth(username, password)
 
-    r = requests.get(url = URL.format(tableName="sc_req_item"),
+    r = requests.get(url = URL.format(servicenow_host=servicenow_host,
+                                      table_name="sc_req_item"),
                      params = PARAMS, auth=AUTH)
 
     result = r.json()
