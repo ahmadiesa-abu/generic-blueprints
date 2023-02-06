@@ -4,7 +4,7 @@ description: >
   This blueprint mock runtime for a node and use it later.
 
 imports:
-  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+  - http://cloudify.co/spec/cloudify/6.3.0/types.yaml
 
 inputs:
 
@@ -34,10 +34,10 @@ node_types:
         type: string
     interfaces:
       cloudify.interfaces.lifecycle:
-        create: 
+        create:
           implementation: scripts/check_connection.py
           executor: central_deployment_agent
-  
+
 
 node_templates:
 

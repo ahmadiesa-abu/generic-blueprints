@@ -12,14 +12,13 @@ password = inputs['password']
 
 if requested_item_number:
 
-    URL = "https://{servicenow_host}/api/now/table/{table_name}"
+    URL = "https://"+servicenow_host+"/api/now/table/sc_req_item"
     PARAMS = {
         "number": requested_item_number
     }
     AUTH = HTTPBasicAuth(username, password)
 
-    r = requests.get(url = URL.format(servicenow_host=servicenow_host,
-                                      table_name="sc_req_item"),
+    r = requests.get(url = URL,
                      params = PARAMS, auth=AUTH)
 
     result = r.json()
@@ -27,8 +26,8 @@ if requested_item_number:
     PARAMS = {
         "document_id": requested_item_document_id
     }
-    r = requests.get(url = URL.format(tableName="sysapproval_approver"),
-                     params = PARAMS, auth=AUTH)
+    URL = URL.replace('sc_req_item', 'sysapproval_approver')
+    r = requests.get(url = URL, params = PARAMS, auth=AUTH)
 
     result = r.json()
     if len(result.get('result', []))>0:
