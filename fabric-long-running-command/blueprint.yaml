@@ -1,0 +1,26 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint leverage fabric run task and poll output stream
+  instead of waiting for it to finish.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+  - plugin:cloudify-fabric-plugin
+
+node_templates:
+
+  some_test:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: fabric.fabric_plugin.tasks.run_task
+          inputs:
+            tasks_file: scripts/tasks.py
+            task_name: run_ongoing
+            fabric_env:
+              host_string: {get_secret: host_ip}
+              user: {get_secret: host_user}
+              key: {get_secret: host_key}
+            hide_output: false
