@@ -1,7 +1,8 @@
 tosca_definitions_version: cloudify_dsl_1_4
 
 description: >
-  This blueprint leverage fabric run task to check for drift.
+  This blueprint leverage fabric run task and poll output stream
+  instead of waiting for it to finish.
 
 imports:
   - cloudify/types/types.yaml
@@ -14,20 +15,18 @@ node_templates:
     interfaces:
       cloudify.interfaces.lifecycle:
         check_drift:
-          implementation: fabric.fabric_plugin.tasks.run_task
+          implementation: fabric.fabric_plugin.tasks.run_script
           inputs:
-            tasks_file: scripts/tasks.py
-            task_name: check_drift
+            script_path: scripts/check_drift.sh
             fabric_env:
               host_string: {get_secret: host_ip}
               user: {get_secret: host_user}
               key: {get_secret: host_key}
             hide_output: false
         update:
-          implementation: fabric.fabric_plugin.tasks.run_task
+          implementation: fabric.fabric_plugin.tasks.run_script
           inputs:
-            tasks_file: scripts/tasks.py
-            task_name: update
+            script_path: scripts/update.sh
             fabric_env:
               host_string: {get_secret: host_ip}
               user: {get_secret: host_user}
