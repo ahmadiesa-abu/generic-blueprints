@@ -1,0 +1,33 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  small test for agent sync
+imports:
+  - https://cloudify.co/spec/cloudify/6.4.0/types.yaml
+
+inputs:
+
+  some_boolean:
+    type: boolean
+    default: true
+
+node_templates:
+
+  test_target:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/test_relations.py
+          executor: central_deployment_agent
+
+  test_source:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/test_relations.py
+          executor: central_deployment_agent
+    relationships:
+      - type: cloudify.relationships.contained_in
+        target: test_target
