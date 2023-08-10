@@ -1,0 +1,36 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  small test for agent sync
+imports:
+  - https://cloudify.co/spec/cloudify/6.4.0/types.yaml
+
+inputs:
+
+  devices_list:
+    type: list
+    description: >
+      list of devices in this format
+        - type: usb
+          device_name: 'Emtec USB DISK 3.0'
+        - type: serial
+          device_name: '/dev/char/serial/uart0'
+    default:
+      - type: usb
+        device_name: 'Emtec USB DISK 3.0'
+      - type: serial
+        device_name: '/dev/char/serial/uart0'
+      - type: pci
+        device_name: 'NetXtreme BCM5720 Gigabit Ethernet'
+
+node_templates:
+
+  test_target:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/generate_blueprint.py
+          executor: central_deployment_agent
+          inputs:
+            devices_list: {get_input: devices_list}
