@@ -1,0 +1,32 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.Root
+    interfaces:
+      test:
+        whatever:
+          implementation: scripts/log.py
+          executor: central_deployment_agent
+
+  some_node2:
+    type: cloudify.nodes.Root
+    interfaces:
+      test:
+        whatever:
+          implementation: scripts/log.py
+          executor: central_deployment_agent
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: some_node
+
+workflows:
+  some_wf:
+    mapping: scripts/cascade_wf.py
