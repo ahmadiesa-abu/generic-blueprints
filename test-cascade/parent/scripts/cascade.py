@@ -8,8 +8,11 @@ from cloudify_rest_client.executions import Execution
 
 def wait_for_status(client, execution, timeout=10000):
     deadline = time.time() + timeout
+    ctx.logger.info('checking execution {0} initail status {1}'.format(execution.id, execution.status))
     while execution.status not in Execution.END_STATES:
         time.sleep(20)
+        execution = client.executions.get(execution.id)
+        ctx.logger.info('after 20s execution.status {0}'.format(execution.status))
         if time.time() > deadline:
             raise Exception(
                     'Execution timed out: \n{0}'
@@ -19,6 +22,7 @@ def wait_for_status(client, execution, timeout=10000):
                 'Workflow execution failed: {0} [{1}]'.format(
                     execution.error,
                     execution.status))
+
 
 rest_client = get_rest_client()
 executions = []
