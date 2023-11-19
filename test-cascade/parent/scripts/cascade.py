@@ -1,29 +1,24 @@
-from time import sleep
+import time
+import json
+
 from cloudify.workflows import ctx
 from cloudify.manager import get_rest_client
+from cloudify_rest_client.executions import Execution
 
 
 def wait_for_status(client, execution, timeout=10000):
-    counter = timeout
-    wrong_state = ['failed',  'cancelled']
-    in_progress_state = ['pending', 'started']
-    while execution.status not in in_progress_state and timeout > 0:
-        sleep(20)
-        counter = counter - 20
-        execution = client.executions.get(execution.id)
-
-    if counter <= 0:
-        raise Exception(
-            "Execution {} is in {} state "
-            "for longer than the timeout {}s".format(execution.id,
-                                                     execution.status,
-                                                     timeout))
-    elif counter > 0 and execution.status in wrong_state:
-        raise Exception(
-            "Execution {} is in {} state ".format(
-                execution.id,
-                execution.status,
-                timeout))
+    deadline = time.time() + timeout
+    while execution.status not in Execution.END_STATES:
+        time.sleep(20)
+        if time.time() > deadline:
+            raise Exception(
+                    'Execution timed out: \n{0}'
+                    .format(json.dumps(execution, indent=2)))
+        if execution.status == Execution.FAILED:
+            raise Exception(
+                'Workflow execution failed: {0} [{1}]'.format(
+                    execution.error,
+                    execution.status))
 
 rest_client = get_rest_client()
 executions = []
