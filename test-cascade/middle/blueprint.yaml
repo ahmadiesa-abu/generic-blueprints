@@ -1,0 +1,58 @@
+tosca_definitions_version: cloudify_dsl_1_3
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - http://cloudify.co/spec/cloudify/5.2.7/types.yaml
+
+node_templates:
+  child_3:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          external_resource: true
+          id: child
+        deployment:
+          id: some_child3
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: child_1
+      - type: cloudify.relationships.depends_on
+        target: child_0
+
+  child_1:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          external_resource: true
+          id: child
+        deployment:
+          id: some_child1
+
+  child_0:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          external_resource: true
+          id: child
+        deployment:
+          id: some_child0
+
+
+
+  child_2:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          external_resource: true
+          id: child
+        deployment:
+          id: some_child2
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: child_3

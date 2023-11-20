@@ -8,24 +8,15 @@ imports:
 
 node_templates:
 
-  child_1:
+  middle:
     type: cloudify.nodes.ServiceComponent
     properties:
       resource_config:
         blueprint:
           external_resource: true
-          id: child
+          id: middle
         deployment:
-          id: some_child1
-  child_2:
-    type: cloudify.nodes.ServiceComponent
-    properties:
-      resource_config:
-        blueprint:
-          external_resource: true
-          id: child
-        deployment:
-          id: some_child2
+          id: middle_1
 
 workflows:
   cascade_action:
