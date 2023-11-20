@@ -36,6 +36,7 @@ def get_ordered_child_deployment(deployment_id):
     original_dep_id = ctx._context['deployment_id']
     try:
         ctx._context['deployment_id'] = deployment_id
+        ctx.internal.handler._rest_client = get_rest_client('test')
         ctx.refresh_node_instances()
         for instance in ctx.node_instances:
             deploy_id = instance.runtime_properties['deployment']['id']
@@ -47,6 +48,7 @@ def get_ordered_child_deployment(deployment_id):
                                      subgraphs[rel.target_id])
     finally:
         ctx._context['deployment_id'] = original_dep_id
+        ctx.internal.handler._rest_client = get_rest_client()
         ctx.refresh_node_instances()
 
     ordered_instances = [instance.name for instance in graph.linearize()]
@@ -55,7 +57,7 @@ def get_ordered_child_deployment(deployment_id):
     return ordered_dep
 
 
-rest_client = get_rest_client()
+rest_client = get_rest_client('test')
 executions = []
 
 for instance in ctx.node_instances:

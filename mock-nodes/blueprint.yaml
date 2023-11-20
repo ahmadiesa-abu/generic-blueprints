@@ -22,10 +22,10 @@ node_types:
         type: string
     interfaces:
       cloudify.interfaces.lifecycle:
-        create: 
+        create:
           implementation: scripts/mock_node.py
           executor: central_deployment_agent
-  
+
 
 node_templates:
 

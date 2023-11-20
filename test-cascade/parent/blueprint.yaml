@@ -11,6 +11,13 @@ node_templates:
   middle:
     type: cloudify.nodes.ServiceComponent
     properties:
+      client:
+        host: 127.0.0.1
+        port: 80
+        protocol: http
+        username: admin
+        password: admin
+        tenant: test
       resource_config:
         blueprint:
           external_resource: true

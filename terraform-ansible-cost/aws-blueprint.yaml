@@ -77,6 +77,7 @@ node_templates:
           deployment_id: { get_sys: [deployment, id] }
           admin_key_public: { get_secret: agent_key_public }
       infracost_config:
+        installation_source: https://github.com/infracost/infracost/releases/download/v0.10.30/infracost-linux-amd64.tar.gz
         enable: true
         api_key: {get_secret: infracost_api_key}
     interfaces:
@@ -85,58 +86,60 @@ node_templates:
           implementation: tf.cloudify_tf.tasks.infracost
           inputs:
             infracost_config: { get_property: [SELF, infracost_config] }
-        start:
-          implementation: files/check_for_approval.py
-          executor: central_deployment_agent
-          inputs:
-            servicenow_host: {get_secret: servicenow_host }
-            requested_item_number: {get_label: sn_ref_number}
-            username: {get_secret: servicenow_user}
-            password: {get_secret: servicenow_password}
-        poststart:
-          implementation: tf.cloudify_tf.tasks.apply
+        start: {}
+        poststart: {}
+        # start:
+        #   implementation: files/check_for_approval.py
+        #   executor: central_deployment_agent
+        #   inputs:
+        #     servicenow_host: {get_secret: servicenow_host }
+        #     requested_item_number: {get_label: sn_ref_number}
+        #     username: {get_secret: servicenow_user}
+        #     password: {get_secret: servicenow_password}
+        # poststart:
+        #   implementation: tf.cloudify_tf.tasks.apply
     relationships:
       - target: terraform
         type: cloudify.terraform.relationships.run_on_host
       - target: agent_key
         type: cloudify.relationships.depends_on
 
-  ansible_playbook:
-    type: cloudify.nodes.ansible.Executor
-    properties:
-      playbook_path: files/playbooks/site.yaml
-      run_data:
-        port: { get_input: nginx_port }
-        message: { get_secret: [ ansible_playbook, aws, { get_input: env_type }, message ] }
-    interfaces:
-      cloudify.interfaces.lifecycle:
-        start:
-          implementation: ansible.cloudify_ansible.tasks.run
-          inputs:
-            playbook_path: files/playbooks/site.yaml
-            sources: { get_attribute: [ SELF, sources ] }
-            save_playbook: true
-            number_of_attempts: 20
-        delete:
-          implementation: ansible.cloudify_ansible.tasks.cleanup
+  # ansible_playbook:
+  #   type: cloudify.nodes.ansible.Executor
+  #   properties:
+  #     playbook_path: files/playbooks/site.yaml
+  #     run_data:
+  #       port: { get_input: nginx_port }
+  #       message: { get_secret: [ ansible_playbook, aws, { get_input: env_type }, message ] }
+  #   interfaces:
+  #     cloudify.interfaces.lifecycle:
+  #       start:
+  #         implementation: ansible.cloudify_ansible.tasks.run
+  #         inputs:
+  #           playbook_path: files/playbooks/site.yaml
+  #           sources: { get_attribute: [ SELF, sources ] }
+  #           save_playbook: true
+  #           number_of_attempts: 20
+  #       delete:
+  #         implementation: ansible.cloudify_ansible.tasks.cleanup
 
-    relationships:
-      - type: cloudify.ansible.relationships.connected_to_host
-        target: cloud_resources
-        source_interfaces:
-          cloudify.interfaces.relationship_lifecycle:
-            preconfigure:
-              implementation: ansible.cloudify_ansible.tasks.ansible_requires_host
-              inputs:
-                group_name: webserver
-                hostname: nginx
-                host_config:
-                       ansible_host: { get_attribute: [ cloud_resources, outputs, ip, value ] }
-                       ansible_user: centos
-                       ansible_ssh_private_key_file: { get_attribute: [agent_key, private_key_export] }
-                       ansible_become: true
-                       ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-            unlink: {}
+  #   relationships:
+  #     - type: cloudify.ansible.relationships.connected_to_host
+  #       target: cloud_resources
+  #       source_interfaces:
+  #         cloudify.interfaces.relationship_lifecycle:
+  #           preconfigure:
+  #             implementation: ansible.cloudify_ansible.tasks.ansible_requires_host
+  #             inputs:
+  #               group_name: webserver
+  #               hostname: nginx
+  #               host_config:
+  #                      ansible_host: { get_attribute: [ cloud_resources, outputs, ip, value ] }
+  #                      ansible_user: centos
+  #                      ansible_ssh_private_key_file: { get_attribute: [agent_key, private_key_export] }
+  #                      ansible_become: true
+  #                      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+  #           unlink: {}
 
   agent_key:
     type: cloudify.keys.nodes.RSAKey
@@ -181,7 +184,7 @@ groups:
   server_and_app:
     members:
     - cloud_resources
-    - ansible_playbook
+    # - ansible_playbook
 
 policies:
 
