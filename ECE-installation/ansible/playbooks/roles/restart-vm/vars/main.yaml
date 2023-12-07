@@ -1,0 +1,8 @@
+--- ## Variables for role
+vcenter:
+  hostname: <ipaddress>
+  username: <username>
+  password: <password>
+  folder: <folder>
+  datacenter: <datacenter>
+  vmname: <vmname>

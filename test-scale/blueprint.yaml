@@ -1,0 +1,32 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  Test scale based on inputs.
+
+imports:
+  - cloudify/types/types.yaml
+
+inputs:
+  instance_count:
+    type: integer
+    default: 0
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          id: child-dep
+          blueprint_archive: child.zip
+          main_file_name: blueprint.yaml
+        deployment:
+          id: child-dep
+          auto_inc_suffix: true
+    capabilities:
+      scalable:
+        properties:
+          default_instances: {get_input: instance_count}
+
+

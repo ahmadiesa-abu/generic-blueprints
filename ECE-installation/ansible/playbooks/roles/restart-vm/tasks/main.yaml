@@ -1,0 +1,14 @@
+---
+
+- name: restart VM
+  block:
+    - name: Set the state of a virtual machine to poweroff
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{ vcenter.username }}"
+        password: "{{ vcenter.password }}"
+        folder: "/{{vcenter.folder}}"
+        name: "{{vcenter.vmname}}"
+        validate_certs: False
+        state: restarted
+      delegate_to: localhost

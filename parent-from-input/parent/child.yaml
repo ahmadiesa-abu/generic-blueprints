@@ -1,0 +1,16 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+imports:
+  - cloudify/types/types.yaml
+
+labels:
+  csys-obj-type:
+    values:
+      - environment
+
+capabilities:
+  test:
+    value: test_from_parent
+    
+  test_from_parent:
+    value: {get_environment_capability: test}

@@ -1,0 +1,20 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+imports:
+  - http://cloudify.co/spec/cloudify/6.4.0/types.yaml
+
+node_templates:
+
+  infrastructure:
+    type: cloudify.nodes.ServiceComponent
+    properties:
+      resource_config:
+        blueprint:
+          id: 'parent1'
+          blueprint_archive: resources/parent.zip
+          main_file_name: blueprint.yaml
+          external_resource: false
+          labels:
+            - hidden: 'true'
+        deployment:
+          id: 'parent2'

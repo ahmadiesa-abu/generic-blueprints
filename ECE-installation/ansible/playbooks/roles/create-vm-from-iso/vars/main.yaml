@@ -1,0 +1,14 @@
+--- ## Variables for role
+vcenter:
+  hostname: <ipaddress>
+  username: <username>
+  password: <password>
+  folder: <folder>
+  datacenter: <datacenter>
+  vmname: <vmname>
+  esxihostname: <esxihostname>
+  datastore: <datastore>
+  filename: <filename>
+  remotefilepath: <remotefilepath>
+  macaddress: <macaddress>
+  vmnetwork: <vmnetwork>

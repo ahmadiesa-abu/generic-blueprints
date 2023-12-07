@@ -1,0 +1,191 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  Creates a new VM.
+
+imports:
+  - https://cloudify.co/spec/cloudify/6.4.2/types.yaml
+  - plugin:cloudify-vsphere-plugin
+  - plugin:cloudify-ansible-plugin
+  - plugin:cloudify-fabric-plugin
+
+inputs:
+
+  manifest_source:
+    type: string
+    display_label: 'Manifest Source'
+    description: The name of source
+    default: 'rel/magicp1-2.0.0'
+
+  software_version:
+    type: string
+    display_label: 'Software Version'
+    description: SW Version. If empty download latest version.
+    default: ''
+
+  production_version:
+    description: Use production version
+    type: boolean
+    display_label: 'Production Use'
+    default: false
+
+  EO_IP:
+    type: string
+    default: "172.20.3.8"
+    description: The ip of Edge Orchestrator
+    display_label: EO IP
+
+dsl_definitions:
+
+  artifactory_config: &artifactory_config
+    artifactory_url: { get_secret: [artifactory, url ] }
+    artifactory_user: { get_secret: [artifactory, username ] }
+    artifactory_password: { get_secret: [artifactory, password ] }
+    artifactory_verify_ssl: { get_secret: [artifactory, verify_ssl ] }
+    manifest_source: { get_input: manifest_source }
+    software_version: { get_input: software_version }
+
+node_templates:
+
+
+  manufacturing_iso:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        precreate:
+          implementation: scripts/download_iso.py
+          executor: central_deployment_agent
+          inputs:
+            artifactory_config: *artifactory_config
+            production_version: { get_input: production_version }
+        create:
+          implementation: scripts/start_serving.py
+          executor: central_deployment_agent
+          inputs:
+            iso_file_path: { get_attribute: [SELF, iso_path] }
+
+  prepare_ece:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/prep_ece_day0.py
+          executor: central_deployment_agent
+
+  day0:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/wait_for_vm.sh
+          executor: central_deployment_agent
+          inputs:
+            process:
+              env:
+                MAC_ADDR: { get_attribute: [ vm_prep, mac_address ] }
+        configure:
+          implementation: fabric.fabric_plugin.tasks.run_task
+          inputs:
+            tasks_file: scripts/vm_handling.py
+            task_name: run_day0
+            fabric_env:
+              host_string: { get_attribute: [SELF, vm_ip] }
+              user: root
+              password: root
+            eo_ip: { get_input: EO_IP }
+            dev_ser_num:
+              concat:
+                - { get_input: vm_name }
+                - { get_attribute: [vm_prep, mac_address] }
+    relationships:
+      - target: vm_prep
+        type: cloudify.relationships.depends_on
+      - target: vm
+        type: cloudify.relationships.depends_on
+
+  restart_vm:
+    type: cloudify.nodes.ansible.Executor
+    properties:
+      ansible_external_venv: { get_attribute: [ansible_binary, playbook_venv ] }
+      save_playbook: true
+      sensitive_keys:
+        - ansible_password
+        - ansible_user
+        - ansible_ssh_private_key_file
+      sources: ansible/inventory.yaml
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: ansible.cloudify_ansible.tasks.run
+          inputs:
+            <<: *ansible_common_inputs
+            playbook_path: ansible/playbooks/restart-vm.yaml
+            run_data:
+              vcenter:
+                hostname: { get_secret: [ vsphere, host ] }
+                username: { get_secret: [ vsphere, username ] }
+                password: { get_secret: [ vsphere, password ] }
+                folder: { get_input: vm_location }
+                datacenter: { get_secret: [ vsphere, datacenter_name ] }
+                vmname: { get_input: vm_name }
+    relationships:
+      - target: vm_prep
+        type: cloudify.relationships.depends_on
+      - target: day0
+        type: cloudify.relationships.depends_on
+
+  day1:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/wait_for_vm.sh
+          executor: central_deployment_agent
+          inputs:
+            process:
+              env:
+                MAC_ADDR: { get_attribute: [ vm_prep, mac_address ] }
+        configure:
+          implementation: fabric.fabric_plugin.tasks.run_task
+          inputs:
+            tasks_file: scripts/vm_handling.py
+            task_name: run_day1
+            fabric_env:
+              host_string: { get_attribute: [SELF, vm_ip] }
+              user: root
+              key: { get_secret: ece_private_key }
+            process:
+              base_dir: /usr/local/hzp
+            eo_ip: { get_input: EO_IP }
+    relationships:
+      - target: vm_prep
+        type: cloudify.relationships.depends_on
+      - target: restart_vm
+        type: cloudify.relationships.depends_on
+
+  ece_vm:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: scripts/wait_for_vm.sh
+          executor: central_deployment_agent
+          inputs:
+            process:
+              env:
+                MAC_ADDR: { get_attribute: [ vm_prep, mac_address ] }
+    relationships:
+      - target: vm_prep
+        type: cloudify.relationships.depends_on
+      - target: day1
+        type: cloudify.relationships.depends_on
+
+capabilities:
+
+  mac_address:
+    description: 'ECE VM mac-address'
+    value: { get_attribute: [vm_prep, mac_address] }
+
+  vm_ip:
+    description: 'ECE VM ip-address'
+    value: { get_attribute: [ece_vm, vm_ip] }

@@ -1,0 +1,45 @@
+imports:
+  - cloudify/types/types.yaml
+
+node_templates:
+  some_other_node:
+    type: cloudify.nodes.Root
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: another_node
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start: |
+          from cloudify import ctx
+          ctx.logger.info('in start')
+        stop: |
+          from cloudify import ctx
+          ctx.logger.info('in stop')
+
+workflows:
+
+  restart:
+    mapping: default_workflows.cloudify.plugins.workflows.restart
+    is_cascading: false
+    availability_rules:
+      node_instances_active: [ 'all', 'partial' ]
+    parameters:
+      stop_parms:
+        default: {}
+      start_parms:
+        default: {}
+      run_by_dependency_order:
+        default: false
+      type_names:
+        type: list
+        item_type: node_type
+        default: []
+      node_ids:
+        type: list
+        item_type: node_id
+        default:
+          - some_other_node
+      node_instance_ids:
+        type: list
+        item_type: node_instance
+        default: []

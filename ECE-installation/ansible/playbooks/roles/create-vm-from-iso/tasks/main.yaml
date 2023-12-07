@@ -1,0 +1,107 @@
+---
+- name: Create a VM from ISO
+  block:
+    - name: Create vm from iso
+      vmware_guest:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{vcenter.username}}"
+        password: "{{vcenter.password}}"
+        validate_certs: no
+        folder: "{{vcenter.folder}}"
+        name: "{{vcenter.vmname}}"
+        state: poweredoff
+        guest_id: ubuntu64Guest
+        datacenter: "{{vcenter.datacenter}}"
+        datastore: "{{vcenter.datastore}}"
+        # This is hostname of particular ESXi server on which user wants VM to be deployed
+        esxi_hostname: "{{vcenter.esxihostname}}"
+        advanced_settings:
+          - key: uefi.allowAuthBypass
+            value: TRUE
+          - key: uefi.secureBoot.PKDefault.append
+            value: FALSE
+          - key: uefi.secureBoot.PKDefault.file0
+            value: PK.cer
+          - key: uefi.secureBoot.KEKDefault.file0
+            value: KEK.cer
+          - key: uefi.secureBoot.dbDefault.file0
+            value: DB.cer
+        disk:
+          - size_gb: "{{ disk_size }}"
+            type: thin
+            datastore: "{{vcenter.datastore}}"
+        hardware:
+          memory_mb: "{{ memory }}"
+          num_cpus: "{{ cpus }}"
+          scsi: paravirtual
+          boot_firmware: efi
+          nested_virt: yes
+        cdrom:
+          - type: iso
+            iso_path: "[{{vcenter.datastore}}] {{vcenter.remotefilepath}}/{{vcenter.filename}}"
+            controller_number: 1
+            unit_number: 0
+        networks:
+          - name: "{{vcenter.vmnetwork}}"
+            mac: "{{vcenter.macaddress}}"
+            device_type: e1000
+        wait_for_ip_address: no
+
+    - name: Copy PK
+      community.vmware.vsphere_copy:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{vcenter.username}}"
+        password: "{{vcenter.password}}"
+        src: "{{TEMP_FILE_PATH}}/PK.cer"
+        datacenter: "{{vcenter.datacenter}}"
+        datastore: "{{vcenter.datastore}}"
+        path: "{{vcenter.vmname}}/PK.cer"
+        validate_certs: no
+      delegate_to: localhost
+
+    - name: Copy KEK
+      community.vmware.vsphere_copy:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{vcenter.username}}"
+        password: "{{vcenter.password}}"
+        src: "{{TEMP_FILE_PATH}}/KEK.cer"
+        datacenter: "{{vcenter.datacenter}}"
+        datastore: "{{vcenter.datastore}}"
+        path: "{{vcenter.vmname}}/KEK.cer"
+        validate_certs: no
+      delegate_to: localhost
+
+    - name: Copy DB
+      community.vmware.vsphere_copy:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{vcenter.username}}"
+        password: "{{vcenter.password}}"
+        src: "{{TEMP_FILE_PATH}}/DB.cer"
+        datacenter: "{{vcenter.datacenter}}"
+        datastore: "{{vcenter.datastore}}"
+        path: "{{vcenter.vmname}}/DB.cer"
+        validate_certs: no
+      delegate_to: localhost
+
+    - name: Add vtpm
+      community.vmware.vmware_guest_tpm:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{vcenter.username}}"
+        password: "{{vcenter.password}}"
+        datacenter: "{{vcenter.datacenter}}"
+        name: "{{vcenter.vmname}}"
+        folder: "/{{vcenter.folder}}"
+        state: present
+        validate_certs: no
+
+    - name: Set the state of a virtual machine to poweron
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{vcenter.hostname}}"
+        username: "{{ vcenter.username }}"
+        password: "{{ vcenter.password }}"
+        folder: "/{{vcenter.folder}}"
+        name: "{{vcenter.vmname}}"
+        validate_certs: False
+        state: powered-on
+      delegate_to: localhost
+      register: deploy

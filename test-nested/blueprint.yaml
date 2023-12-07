@@ -1,0 +1,40 @@
+tosca_definitions_version: cloudify_dsl_1_5
+
+imports:
+  - cloudify/types/types.yaml
+
+node_types:
+
+  cloudify.nodes.TestNested:
+    derived_from: cloudify.nodes.Root
+    properties:
+      dict_value:
+        type: dict
+
+
+inputs:
+  some_complex_input:
+    type: dict
+    default:
+      dummy_values:
+        test: true
+      real_values:
+        a: true
+        b: 12
+        c: [1,2,3]
+
+node_templates:
+
+  some_node:
+    type: cloudify.nodes.TestNested
+    properties:
+      dict_value: {get_input: [some_complex_input, real_values]}
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        create:
+          implementation: scripts/list_props.py
+          executor: central_deployment_agent
+          inputs:
+            a: {get_property: [SELF, dict_value, a]}
+            b: {get_property: [SELF, dict_value, b]}
+            c: {get_property: [SELF, dict_value, c]}

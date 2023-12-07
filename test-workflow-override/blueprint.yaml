@@ -1,0 +1,35 @@
+tosca_definitions_version: cloudify_dsl_1_4
+
+description: >
+  This blueprint mock runtime for a node and use it later.
+
+imports:
+  - otherstuff.yaml
+
+
+
+node_templates:
+
+  another_node:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start: |
+          from cloudify import ctx
+          ctx.logger.info('in start')
+        stop: |
+          from cloudify import ctx
+          ctx.logger.info('in stop')
+  some_node:
+    type: cloudify.nodes.Root
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: another_node
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start: |
+          from cloudify import ctx
+          ctx.logger.info('in start')
+        stop: |
+          from cloudify import ctx
+          ctx.logger.info('in stop')
