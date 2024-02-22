@@ -1,5 +1,0 @@
----
-- name: restart vSphere VM
-  hosts: localhost
-  roles:
-    - restart-vm
